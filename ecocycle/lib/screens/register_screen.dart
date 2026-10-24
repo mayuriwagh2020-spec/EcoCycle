@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool obscureConfirmPassword = true;
 
   // Android phone connected using adb reverse
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   @override
   void dispose() {

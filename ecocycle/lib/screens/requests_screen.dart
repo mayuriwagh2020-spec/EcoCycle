@@ -12,7 +12,7 @@ class RequestsScreen extends StatefulWidget {
 }
 
 class _RequestsScreenState extends State<RequestsScreen> {
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   List<dynamic> requests = [];
   bool isLoading = true;

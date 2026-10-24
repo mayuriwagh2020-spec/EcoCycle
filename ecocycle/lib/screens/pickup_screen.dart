@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -18,17 +18,15 @@ class _PickupScreenState extends State<PickupScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController itemNameController = TextEditingController();
-  final TextEditingController quantityController =
-      TextEditingController();
-  final TextEditingController addressController =
-      TextEditingController();
-  final TextEditingController notesController =
-      TextEditingController();
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
 
   final ImagePicker _imagePicker = ImagePicker();
 
   DateTime? selectedDate;
-  File? selectedImage;
+  XFile? selectedImage;
+  Uint8List? selectedImageBytes;
 
   bool isLoading = false;
 
@@ -47,7 +45,7 @@ class _PickupScreenState extends State<PickupScreen> {
     'Other',
   ];
 
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   @override
   void dispose() {
@@ -59,7 +57,7 @@ class _PickupScreenState extends State<PickupScreen> {
   }
 
   // ============================================================
-  // SELECT IMAGE
+  // SELECT IMAGE (Web-Safe)
   // ============================================================
   Future<void> pickImage() async {
     try {
@@ -74,8 +72,11 @@ class _PickupScreenState extends State<PickupScreen> {
         return;
       }
 
+      final bytes = await image.readAsBytes();
+
       setState(() {
-        selectedImage = File(image.path);
+        selectedImage = image;
+        selectedImageBytes = bytes;
       });
     } catch (error) {
       if (!mounted) return;
@@ -89,32 +90,24 @@ class _PickupScreenState extends State<PickupScreen> {
   }
 
   // ============================================================
-  // UPLOAD IMAGE TO SUPABASE
+  // UPLOAD IMAGE TO SUPABASE (Web-Safe)
   // ============================================================
   Future<String> uploadImage() async {
-    if (selectedImage == null) {
+    if (selectedImage == null || selectedImageBytes == null) {
       return '';
     }
 
     final supabase = Supabase.instance.client;
-
     final prefs = await SharedPreferences.getInstance();
-
     final userId = prefs.getString('userId') ?? 'unknown-user';
 
-    final fileExtension =
-        selectedImage!.path.split('.').last.toLowerCase();
-
-    final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-
+    final fileExtension = selectedImage!.name.split('.').last.toLowerCase();
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
     final filePath = '$userId/$fileName';
-
-    final fileBytes = await selectedImage!.readAsBytes();
 
     await supabase.storage.from('ewaste-images').uploadBinary(
           filePath,
-          fileBytes,
+          selectedImageBytes!,
           fileOptions: FileOptions(
             contentType: 'image/$fileExtension',
             upsert: false,
@@ -171,7 +164,6 @@ class _PickupScreenState extends State<PickupScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
@@ -199,8 +191,7 @@ class _PickupScreenState extends State<PickupScreen> {
         body: jsonEncode({
           'itemName': itemNameController.text.trim(),
           'category': selectedCategory,
-          'quantity':
-              int.parse(quantityController.text.trim()),
+          'quantity': int.parse(quantityController.text.trim()),
           'address': addressController.text.trim(),
           'preferredDate': selectedDate!.toIso8601String(),
           'notes': notesController.text.trim(),
@@ -231,14 +222,14 @@ class _PickupScreenState extends State<PickupScreen> {
         setState(() {
           selectedDate = null;
           selectedImage = null;
+          selectedImageBytes = null;
           selectedCategory = 'Mobile Phone';
         });
 
         Navigator.pop(context);
       } else {
         throw Exception(
-          responseData['message'] ??
-              'Failed to create pickup request',
+          responseData['message'] ?? 'Failed to create pickup request',
         );
       }
     } catch (error) {
@@ -268,12 +259,10 @@ class _PickupScreenState extends State<PickupScreen> {
       appBar: AppBar(
         title: const Text('Schedule E-Waste Pickup'),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -284,7 +273,6 @@ class _PickupScreenState extends State<PickupScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // ==================================================
@@ -302,7 +290,6 @@ class _PickupScreenState extends State<PickupScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter item name';
                   }
-
                   return null;
                 },
               ),
@@ -327,7 +314,6 @@ class _PickupScreenState extends State<PickupScreen> {
                 }).toList(),
                 onChanged: (value) {
                   if (value == null) return;
-
                   setState(() {
                     selectedCategory = value;
                   });
@@ -352,13 +338,10 @@ class _PickupScreenState extends State<PickupScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter quantity';
                   }
-
                   final quantity = int.tryParse(value);
-
                   if (quantity == null || quantity < 1) {
                     return 'Enter a valid quantity';
                   }
-
                   return null;
                 },
               ),
@@ -381,7 +364,6 @@ class _PickupScreenState extends State<PickupScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter pickup address';
                   }
-
                   return null;
                 },
               ),
@@ -418,7 +400,7 @@ class _PickupScreenState extends State<PickupScreen> {
               const SizedBox(height: 24),
 
               // ==================================================
-              // IMAGE SECTION
+              // IMAGE SECTION (Web-Safe with Image.memory)
               // ==================================================
               const Text(
                 'E-Waste Image',
@@ -430,7 +412,7 @@ class _PickupScreenState extends State<PickupScreen> {
 
               const SizedBox(height: 10),
 
-              if (selectedImage != null)
+              if (selectedImageBytes != null)
                 Container(
                   width: double.infinity,
                   height: 220,
@@ -442,8 +424,8 @@ class _PickupScreenState extends State<PickupScreen> {
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Image.file(
-                    selectedImage!,
+                  child: Image.memory(
+                    selectedImageBytes!,
                     fit: BoxFit.cover,
                   ),
                 )
@@ -516,8 +498,7 @@ class _PickupScreenState extends State<PickupScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed:
-                      isLoading ? null : submitPickupRequest,
+                  onPressed: isLoading ? null : submitPickupRequest,
                   icon: isLoading
                       ? const SizedBox(
                           width: 20,
@@ -529,9 +510,7 @@ class _PickupScreenState extends State<PickupScreen> {
                         )
                       : const Icon(Icons.local_shipping),
                   label: Text(
-                    isLoading
-                        ? 'Submitting...'
-                        : 'Schedule Pickup',
+                    isLoading ? 'Submitting...' : 'Schedule Pickup',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

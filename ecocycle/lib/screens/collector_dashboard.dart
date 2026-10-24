@@ -17,7 +17,7 @@ class CollectorDashboard extends StatefulWidget {
 class _CollectorDashboardState extends State<CollectorDashboard> {
   int currentIndex = 0;
 
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +70,7 @@ class CollectorHome extends StatefulWidget {
 }
 
 class _CollectorHomeState extends State<CollectorHome> {
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   bool isLoading = true;
   String errorMessage = '';
@@ -354,7 +354,7 @@ class CollectorRequestsPage extends StatefulWidget {
 
 class _CollectorRequestsPageState
     extends State<CollectorRequestsPage> {
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   bool isLoading = true;
   String errorMessage = '';

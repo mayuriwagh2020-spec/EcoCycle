@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool obscurePassword = true;
 
   // Android phone connected through adb reverse
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
   @override
   void dispose() {

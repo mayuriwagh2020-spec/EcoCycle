@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'profile_screen.dart';
 
-const String baseUrl = 'http://127.0.0.1:5000';
+const String baseUrl = 'https://ecocycle-hue5.onrender.com';
 
 class RecyclerDashboard extends StatefulWidget {
   const RecyclerDashboard({super.key});
